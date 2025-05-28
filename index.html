@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP ABAP Job Search Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .loading i {
+            font-size: 2rem;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .job-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .job-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .job-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .job-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .job-location {
+            color: #718096;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .job-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-c2c {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge-visa {
+            background: #bee3f8;
+            color: #2a69ac;
+        }
+
+        .apply-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+
+        .apply-btn:hover {
+            background: #38a169;
+        }
+
+        .apply-btn.disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        @media (max-width: 768px) {
+            .job-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 SAP ABAP Job Search</h1>
+            <p>Find C2C opportunities for SAP ABAP positions in the USA</p>
+        </div>
+
+        <div class="controls">
+            <button class="search-btn" onclick="searchJobs()" id="searchBtn">
+                🚀 Search Latest Jobs
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <i>⟳</i>
+            <p>Searching for the latest SAP ABAP opportunities...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="stats" id="stats">
+                <!-- Stats will be populated here -->
+            </div>
+            
+            <div class="job-grid" id="jobGrid">
+                <!-- Job cards will be populated here -->
+            </div>
+
+            <div class="debug-info" id="debugInfo" style="display: none;">
+                <!-- Debug information will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Utility function to sanitize text content
+        function sanitizeText(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Utility function to validate URLs
+        function isValidUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
+
+        async function searchJobs() {
+            const searchBtn = document.getElementById('searchBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            // Show loading state
+            searchBtn.disabled = true;
+            searchBtn.textContent = '🔄 Searching...';
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            
+            try {
+                // Call the Python script
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        displayResults(data);
+                    } else {
+                        throw new Error(data.error || 'Search failed');
+                    }
+                } else {
+                    const errorData = await response.json();
+                    console.error('Search failed:', errorData);
+                    alert(`Search failed: ${errorData.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`Network error: ${error.message}`);
+            } finally {
+                // Reset UI
+                searchBtn.disabled = false;
+                searchBtn.textContent = '🚀 Search Latest Jobs';
+                loading.style.display = 'none';
+                results.style.display = 'block';
+            }
+        }
+        
+        function displayResults(data) {
+            const stats = document.getElementById('stats');
+            const jobGrid = document.getElementById('jobGrid');
+            const debugInfo = document.getElementById('debugInfo');
+            
+            const jobs = data.jobs || [];
+            const totalJobs = jobs.length;
+            const c2cConfirmed = jobs.filter(job => job.c2c === 'Yes').length;
+            const visaFriendly = jobs.filter(job => job.visa === 'Yes').length;
+            const validLinks = jobs.filter(job => job.link && job.link !== '#' && isValidUrl(job.link)).length;
+            
+            // Update stats (safe - only numbers)
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${totalJobs}</div>
+                    <div class="stat-label">Total Jobs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${c2cConfirmed}</div>
+                    <div class="stat-label">C2C Confirmed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${visaFriendly}</div>
+                    <div class="stat-label">Visa Friendly</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${validLinks}</div>
+                    <div class="stat-label">Valid Links</div>
+                </div>
+            `;
+            
+            // Clear job grid first
+            jobGrid.innerHTML = '';
+            
+            // Create job cards safely
+            jobs.forEach((job, index) => {
+                const hasValidLink = job.link && job.link !== '#' && isValidUrl(job.link);
+                
+                // Create job card element
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card';
+                
+                // Create and set title safely
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'job-title';
+                titleDiv.textContent = job.title || 'N/A';
+                
+                // Create and set location safely
+                const locationDiv = document.createElement('div');
+                locationDiv.className = 'job-location';
+                locationDiv.textContent = `📍 ${job.location || 'N/A'}`;
+                
+                // Create badges container
+                const badgesDiv = document.createElement('div');
+                badgesDiv.className = 'job-badges';
+                
+                const c2cBadge = document.createElement('span');
+                c2cBadge.className = 'badge badge-c2c';
+                c2cBadge.textContent = `C2C: ${job.c2c || 'N/A'}`;
+                
+                const visaBadge = document.createElement('span');
+                visaBadge.className = 'badge badge-visa';
+                visaBadge.textContent = `Visa: ${job.visa || 'N/A'}`;
+                
+                badgesDiv.appendChild(c2cBadge);
+                badgesDiv.appendChild(visaBadge);
+                
+                // Create apply button or disabled message
+                let applyElement;
+                if (hasValidLink) {
+                    applyElement = document.createElement('a');
+                    applyElement.href = job.link;
+                    applyElement.className = 'apply-btn';
+                    applyElement.target = '_blank';
+                    applyElement.rel = 'noopener noreferrer';
+                    applyElement.textContent = 'Apply Now';
+                } else {
+                    applyElement = document.createElement('span');
+                    applyElement.className = 'apply-btn disabled';
+                    applyElement.textContent = 'Link Not Available';
+                }
+                
+                // Assemble the card
+                jobCard.appendChild(titleDiv);
+                jobCard.appendChild(locationDiv);
+                jobCard.appendChild(badgesDiv);
+                jobCard.appendChild(applyElement);
+                
+                // Add helper text for unavailable links
+                if (!hasValidLink) {
+                    const helperText = document.createElement('p');
+                    helperText.style.fontSize = '0.8rem';
+                    helperText.style.color = '#718096';
+                    helperText.style.marginTop = '10px';
+                    helperText.textContent = '💡 Search for this job title on company websites or job boards';
+                    jobCard.appendChild(helperText);
+                }
+                
+                jobGrid.appendChild(jobCard);
+            });
+
+            // Show debug info if available (limit and sanitize)
+            if (data.citations && data.citations.length > 0) {
+                debugInfo.innerHTML = '';
+                const title = document.createElement('strong');
+                title.textContent = 'Available Job Sources:';
+                debugInfo.appendChild(title);
+                debugInfo.appendChild(document.createElement('br'));
+                
+                data.citations.slice(0, 5).forEach((citation, i) => {
+                    if (isValidUrl(citation)) {
+                        const link = document.createElement('a');
+                        link.href = citation;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.textContent = `${i + 1}. ${citation}`;
+                        debugInfo.appendChild(link);
+                        debugInfo.appendChild(document.createElement('br'));
+                    }
+                });
+                debugInfo.style.display = 'block';
+            }
+        }
+        
+        // Auto-search on page load
+        window.addEventListener('load', () => {
+            setTimeout(searchJobs, 1000);
+        });
+    </script>
+</body>
+</html> 
